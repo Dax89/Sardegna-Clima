@@ -16,8 +16,8 @@ Summary:    Sardegna clima
 Version:    1.0
 Release:    1
 Group:      Qt/Qt
-License:    LICENSE
-URL:        http://example.org/
+License:    GPL3
+URL:        https://github.com/Dax89/harbour-sardegnaclima
 Source0:    %{name}-%{version}.tar.bz2
 Source100:  harbour-sardegnaclima.yaml
 Requires:   sailfishsilica-qt5 >= 0.10.9
@@ -28,7 +28,7 @@ BuildRequires:  pkgconfig(Qt5Quick)
 BuildRequires:  desktop-file-utils
 
 %description
-Short description of my Sailfish OS Application
+Sardegna Clima's weather station client
 
 
 %prep
