@@ -1,0 +1,5 @@
+<RCC>
+    <qresource prefix="/">
+        <file>res/harbour-sardegnaclima.png</file>
+    </qresource>
+</RCC>
