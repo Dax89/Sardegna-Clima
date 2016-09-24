@@ -100,10 +100,9 @@ Item
     }
 
     function updateMap() {
-        if(timlockupdate.running || !weatherData || !sourceMap || !currentMap)
+        if(!weatherData || !sourceMap || !currentMap)
             return;
 
-        timlockupdate.start(); // Flood check
         sourceMap.clearMapItems();
 
         weatherData.forEach(function(weatherstation, index) {
@@ -134,10 +133,8 @@ Item
             if(nearestws !== false) {
                 var ws = positionsource.nearestWeatherStation(positionsource.position.coordinate);
 
-                if(!ws)
-                    return;
-
-                weatherstationdata.nearestWeatherStation = ws;
+                if(ws)
+                    weatherstationdata.nearestWeatherStation = ws;
             }
         }
 
@@ -269,8 +266,6 @@ Item
             }
         }
     }
-
-    Timer { id: timlockupdate; interval: 500 }
 
     Timer
     {
