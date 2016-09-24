@@ -4,7 +4,7 @@ Sardegna Clima for SailfishOS
 This client app provides local forecast based on data provided by [Sardegna Clima](http://www.sardegna-clima.it)
 
 <p align="center">
-<img src="https://github.com/Dax89/harbour-sardegnaclima/blob/master/harbour-sardegnaclima/artwork/cover.png">
+<img height="640" src="https://github.com/Dax89/harbour-sardegnaclima/raw/master/artwork/cover.png">
 </p>
 
 License
