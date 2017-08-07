@@ -1,164 +1,126 @@
-import QtQuick 2.1
+import QtQuick 2.0
 import QtLocation 5.0
-import QtPositioning 5.2
-import Sailfish.Silica 1.0
-import harbour.sardegnaclima 1.0
-import "../components"
-import "../js/Weather.js" as Weather
-import "../js/Settings.js" as Settings
+import QtPositioning 5.0
+import "qrc:/js/Weather.js" as Weather
+import "qrc:/js/Settings.js" as Settings
 
 Item
 {
-    readonly property string requestUrl: "http://www.sardegna-clima.it/stazioni/server/public_html/index.php/v1/summary"
-    property WeatherStorage weatherStorage: WeatherStorage { }
-    property MapsModel maps: MapsModel {  }
-    property var weatherData: null
-    property Map sourceMap: null
-    property var lastUpdate: null
+    readonly property string applicationName: "Sardegna Clima"
+    readonly property string applicationVersion: "1.0"
+
+    property MapsModel maps: MapsModel { }
+    property var wsComponent: null
     property var nearestWeatherStation: null
+    property var weatherData: null
+    property var lastUpdate: null
+    property Map sardiniaView: null
 
-    property var currentMap: {
-        if(!maps)
-            return null;
+    function updateMap() {
+        if(!weatherData || !sardiniaView)
+            return;
 
-        var value = Settings.get("lastmap");
+        sardiniaView.clearMapItems();
 
-        if(value !== false) {
-            var map = maps.byValue(value);
+        weatherData.forEach(function(weatherstation, index) {
+            var wsobj = wsComponent.createObject(sardiniaView)
+            wsobj.stationIdx = index;
+            wsobj.displayArrow = (sardiniaView.currentMap && (sardiniaView.currentMap === "dir"));
+            wsobj.coordinate = QtPositioning.coordinate(weatherstation.latitude, weatherstation.longitude);
+            wsobj.value = wsdata.value(weatherstation);
+            wsobj.color = wsdata.color(weatherstation);
 
-            if(map)
-                return map;
+            wsobj.detailsRequested.connect(function() { wsdialog.details(weatherstation); });
+            sardiniaView.addMapItem(wsobj);
+        });
+    }
+
+    function load(onlineupdate) {
+        var localdata = scconfig.load();
+
+        if(localdata.length > 0) {
+            weatherData = JSON.parse(localdata);
+            updateMap();
         }
 
-        return maps.elements[0];
+        var lastupdate = Settings.get("lastupdate");
+
+        if(lastupdate !== false)
+            lastUpdate = new Date(parseFloat(lastupdate));
+
+        if(onlineupdate !== false) {
+            var req = new XMLHttpRequest();
+
+            req.onreadystatechange = function() {
+                if(req.readyState === XMLHttpRequest.DONE) {
+                    weatherData = JSON.parse(req.responseText);
+                    lastUpdate = Date.now();
+
+                    Settings.set("lastupdate", lastUpdate);
+                    scconfig.save(req.responseText);
+                    updateMap();
+
+                    var nearestws = positionsource.nearestWeatherStation(positionsource.position.coordinate);
+
+                    if(!nearestws)
+                        return;
+
+                    Settings.set("nearestws", nearestws.id);
+                }
+            }
+
+            req.open("GET", scconfig.requestUrl);
+            req.send();
+        }
     }
 
-    id: weatherstationdata
-    onSourceMapChanged: updateMap()
-    onWeatherDataChanged: updateMap()
+    function value(weatherstation, mapvalue) {
+        var mapmodel = sardiniaView.currentModel;
 
-    onCurrentMapChanged: {
-        if(currentMap)
-            Settings.set("lastmap", currentMap.value);
+        if(mapvalue && mapvalue !== mapmodel.value)
+            mapmodel = maps.byValue(mapvalue);
 
-        updateMap();
-    }
-
-    function userValue(weatherstation, mapvalue) {
-        var map = currentMap;
-
-        if(map.value !== mapvalue)
-            map = maps.byValue(mapvalue);
-
-        if(!map)
-            return "No map";
-
-        var value = weatherstation.measure[mapvalue];
+        var value = weatherstation.measure[mapmodel.value];
 
         if(!value) { // Updating...
-            if(map.value === "dir")
+            if(mapmodel.value === "dir")
                 return -1;
 
-            return map.defaultValue;
+            return mapmodel.defaultValue;
         }
 
-        if(map.value === "dir")
+        if(mapmodel.value === "dir")
             return value;
 
-        if(map.unit.length > 0)
-            return value + " " + map.unit;
+        if(mapmodel.unit.length > 0)
+            return value + " " + mapmodel.unit;
 
         return value;
     }
 
-    function value(weatherstation) {
-        return userValue(weatherstation, currentMap.value);
-    }
-
     function color(weatherstation) {
-        var value = weatherstation.measure[currentMap.value];
+        var currentmap = sardiniaView.currentMap;
+        var value = weatherstation.measure[currentmap];
 
         if(!value) // Updating...
-            return Theme.primaryColor;
+            return "white";
 
-        if((currentMap.value === "temp") || (currentMap.value === "dp"))
+        if((currentmap === "temp") || (currentmap === "dp"))
             return Weather.temperature(value);
-        else if(currentMap.value === "tempmin")
+        else if(currentmap === "tempmin")
             return Weather.temperatureMin(value);
-        else if(currentMap.value === "tempmax")
+        else if(currentmap === "tempmax")
             return Weather.temperatureMax(value);
-        else if(currentMap.value === "rain")
+        else if(currentmap === "rain")
             return Weather.rain(value);
-        else if(currentMap.value === "hum")
+        else if(currentmap === "hum")
             return Weather.humidity(value);
-        else if(currentMap.value === "wspeed")
+        else if(currentmap === "wspeed")
             return Weather.windColor(value);
-        else if(currentMap.value === "dir")
+        else if(currentmap === "dir")
             return Weather.windColor(weatherstation.measure["wspeed"]);
 
-        return Theme.secondaryHighlightColor;
-    }
-
-    function updateMap() {
-        if(!weatherData || !sourceMap || !currentMap)
-            return;
-
-        sourceMap.clearMapItems();
-
-        weatherData.forEach(function(weatherstation, index) {
-            var wsobj = weatherstationcomponent.createObject(sourceMap)
-            wsobj.stationIdx = index;
-            wsobj.displayArrow = (currentMap && (currentMap.value === "dir"));
-            wsobj.coordinate = QtPositioning.coordinate(weatherstation.latitude, weatherstation.longitude);
-            wsobj.value = weatherstationdata.value(weatherstation);
-            wsobj.color = weatherstationdata.color(weatherstation);
-            sourceMap.addMapItem(wsobj);
-        });
-    }
-
-    function load(onlineonly) {
-        if(onlineonly !== true) {
-            var localdata = weatherStorage.load();
-
-            if(localdata.length > 0)
-                weatherData = JSON.parse(localdata);
-
-            var lastupdate = Settings.get("lastupdate");
-
-            if(lastupdate !== false)
-                lastUpdate = new Date(parseFloat(lastupdate));
-
-            var nearestws = Settings.get("nearestws");
-
-            if(nearestws !== false) {
-                var ws = positionsource.nearestWeatherStation(positionsource.position.coordinate);
-
-                if(ws)
-                    weatherstationdata.nearestWeatherStation = ws;
-            }
-        }
-
-        var req = new XMLHttpRequest();
-
-        req.onreadystatechange = function() {
-            if(req.readyState === XMLHttpRequest.DONE) {
-                weatherData = JSON.parse(req.responseText);
-                weatherStorage.save(req.responseText);
-
-                lastUpdate = Date.now();
-                Settings.set("lastupdate", lastUpdate);
-
-                var nearestws = positionsource.nearestWeatherStation(positionsource.position.coordinate);
-
-                if(!nearestws)
-                    return;
-
-                Settings.set("nearestws", nearestws.id);
-            }
-        }
-
-        req.open("GET", requestUrl);
-        req.send();
+        return "white";
     }
 
     function localize(ignorezoom) {
@@ -166,6 +128,13 @@ Item
 
         positionsource.update();
         timnearestws.start();
+    }
+
+    id: wsdata
+
+    Component.onCompleted: {
+        wsComponent = Qt.createComponent("../widgets/WeatherStation.qml");
+        load(false);
     }
 
     PositionSource {
@@ -213,62 +182,7 @@ Item
         preferredPositioningMethods: PositionSource.AllPositioningMethods
     }
 
-    Component {
-        id: weatherstationcomponent
-
-        MapQuickItem {
-            property bool displayArrow: false
-            property string value
-            property string color
-            property int stationIdx
-
-            id: weatherstationitem
-            anchorPoint: Qt.point(content.width / 4, content.height / 4)
-            opacity: 0.8
-
-            sourceItem: Rectangle {
-                id: content
-                color: weatherstationitem.displayArrow ? "transparent" : weatherstationitem.color
-                border { width: 1; color: weatherstationitem.displayArrow ? "transparent" : "black" }
-                width: lblhiddenvalue.contentWidth + (Theme.paddingSmall * 2)
-                height: Theme.fontSizeExtraSmall
-                radius: width * 0.1
-
-                Arrow {
-                    anchors.fill: parent
-                    visible: weatherstationitem.displayArrow && (weatherstationitem.value > 0)
-                    color: weatherstationitem.color
-                    rotation: weatherstationitem.displayArrow ? Weather.windDirection(weatherstationitem.value) : 0
-                }
-
-                Label {
-                    id: lblvalue
-                    visible: !weatherstationitem.displayArrow
-                    anchors { fill: parent; leftMargin: Theme.paddingSmall; rightMargin: Theme.paddingSmall }
-                    horizontalAlignment: Text.AlignHCenter
-                    verticalAlignment: Text.AlignVCenter
-                    height: parent.height
-                    text: weatherstationitem.value
-                    font.pixelSize: Theme.fontSizeTiny
-                    color: "black"
-                }
-
-                MouseArea {
-                    anchors.fill: parent
-
-                    onClicked: {
-                        pageStack.push(Qt.resolvedUrl("../pages/weatherstation/WeatherStationPage.qml"), { "weatherStationData": weatherstationdata,
-                                                                                                           "stationIdx": weatherstationitem.stationIdx });
-                    }
-                }
-
-                Label { id: lblhiddenvalue; visible: false; text: weatherstationitem.value; font.pixelSize: Theme.fontSizeTiny; }
-            }
-        }
-    }
-
-    Timer
-    {
+    Timer {
         property bool zoom: true
 
         id: timnearestws
@@ -278,15 +192,14 @@ Item
         onTriggered: {
             var nearestws = positionsource.nearestWeatherStation(positionsource.position.coordinate);
 
-            if(!nearestws || !sourceMap)
+            if(!nearestws || !sardiniaView)
                 return;
 
-            weatherstationdata.nearestWeatherStation = nearestws;
+            wsdata.nearestWeatherStation = nearestws;
 
-            if(zoom)
-            {
-                sourceMap.center = QtPositioning.coordinate(nearestws.latitude, nearestws.longitude);
-                sourceMap.zoomLevel = sourceMap.maximumZoomLevel / 2;
+            if(zoom) {
+                sardiniaView.center = QtPositioning.coordinate(nearestws.latitude, nearestws.longitude);
+                sardiniaView.zoomLevel = sardiniaView.maximumZoomLevel / 2;
             }
 
             Settings.set("nearestws", nearestws.id);

@@ -1,5 +1,9 @@
 <RCC>
     <qresource prefix="/">
-        <file>res/harbour-sardegnaclima.png</file>
+        <file>res/location.png</file>
+        <file>res/refresh.png</file>
+        <file>res/back.png</file>
+        <file>res/menu.png</file>
+        <file>res/app.png</file>
     </qresource>
 </RCC>

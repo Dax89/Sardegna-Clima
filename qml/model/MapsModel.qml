@@ -2,8 +2,6 @@ import QtQuick 2.1
 
 Item
 {
-    property int lastMapIndex: -1
-
     property list<QtObject> elements: [ QtObject { readonly property string category: qsTr("Temperature")
                                                    readonly property string text: qsTr("Mid Temperature")
                                                    readonly property string value: "temp"
@@ -58,12 +56,24 @@ Item
                                                    readonly property string defaultValue: qsTr("No Data")
                                                    readonly property string unit: "mb" } ]
 
+    function indexOf(value) {
+        for(var i = 0; i < elements.length; i++) {
+            if(elements[i].value !== value)
+                continue;
+
+            return i;
+        }
+
+        console.warn("Map " + value + " not found");
+        return -1;
+    }
+
     function byValue(value) {
         for(var i = 0; i < elements.length; i++) {
-            if(elements[i].value === value) {
-                lastMapIndex = i;
-                return elements[i];
-            }
+            if(elements[i].value !== value)
+                continue;
+
+            return elements[i];
         }
 
         console.warn("Map " + value + " not found");

@@ -1,0 +1,6 @@
+<RCC>
+    <qresource prefix="/">
+        <file>js/Weather.js</file>
+        <file>js/Settings.js</file>
+    </qresource>
+</RCC>

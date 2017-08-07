@@ -1,0 +1,14 @@
+<RCC>
+    <qresource prefix="/">
+        <file>qml/widgets/HeaderBar.qml</file>
+        <file>qml/widgets/SardiniaMap.qml</file>
+        <file>qml/widgets/ImageToolButton.qml</file>
+        <file>qml/model/WeatherStationData.qml</file>
+        <file>qml/widgets/WeatherStation.qml</file>
+        <file>qml/model/MapsModel.qml</file>
+        <file>qml/widgets/Arrow.qml</file>
+        <file>qml/sardegnaclima.qml</file>
+        <file>qml/dialogs/WeatherStationDialog.qml</file>
+        <file>qml/dialogs/AboutDialog.qml</file>
+    </qresource>
+</RCC>
