@@ -1,14 +1,12 @@
 
-Sardegna Clima for SailfishOS
+Sardegna Clima for Android (Unofficial Client)
 -----
 This client app provides local forecast based on data provided by [Sardegna Clima](http://www.sardegna-clima.it)
 
 <p align="center">
-<img height="640" src="https://github.com/Dax89/harbour-sardegnaclima/raw/master/artwork/cover.png">
+<img height="640" src="https://github.com/Dax89/Sardegna-Clima/raw/master/artwork/cover.png">
 </p>
 
 License
 -----
 Sardegna Clima is released under GNU GPL3 License
-
-[Donations](https://www.paypal.com/cgi-bin/webscr?cmd=_donations&business=SQFHRE6MHAPUC&lc=GB&item_name=Donazione%20per%20sviluppo%20Sardegna%20Clima&currency_code=EUR&bn=PP%2dDonationsBF%3abtn_donate_SM%2egif%3aNonHosted) are welcome.
